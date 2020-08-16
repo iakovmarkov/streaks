@@ -5,7 +5,6 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     ConversationHandler,
-    PicklePersistence,
 )
 from enum import Enum
 import logging
@@ -23,18 +22,15 @@ def getUserName(update):
     return f"{update.message.from_user.username} ({update.message.from_user.id})"
 
 
-def getReminders(update):
-    return [
-        {"when": "morning", "text": "Work!"},
-        {"when": "evening", "text": "Take your medication!"},
-    ]
+def getReminders(db, update):
+    return db['reminders'].find({ "user_id": update.message.from_user.id })
 
 
 class Bot:
-    def __init__(self, args):
+    def __init__(self, args, db):
         log.info("Creating Bot...")
-        self.pickle = PicklePersistence(filename="tinyCareBot")
-        self.updater = Updater(args.botToken, persistence=self.pickle, use_context=True)
+        self.db = db
+        self.updater = Updater(args.botToken, use_context=True)
 
         dispatcher = self.updater.dispatcher
         dispatcher.add_handler(CommandHandler("start", self.start))
@@ -59,7 +55,9 @@ class Bot:
         textOk = len(text) > 0
 
         if whenOk and textOk:
-            log.info(f"Received message: {when} {text} from {getUserName(update)}")
+            reminder = { "when": when, "text": text, "user_id": update.message.from_user.id }
+            id = self.db.reminders.insert_one(reminder).inserted_id
+            log.info(f"Saved reminder ({id}): {when} {text} from {getUserName(update)}")
             update.message.reply_text(f'Will remind you "{text}" every {when}')
         else:
             log.info(f"Received malformed message: {message}")
@@ -68,25 +66,19 @@ class Bot:
             )
 
     def delete(self, update, context):
-        reminders = getReminders(update)
+        reminders = getReminders(self.db, update)
         id = update.message.text.replace("/delete", "")
-
-        for reminder in reminders:
-            if True: #reminder.id === id
-                update.message.reply_text("Reminder removed")
-                return
-        
         update.message.reply_text("Not found")
 
     def list(self, update, context):
-        reminders = getReminders(update)
+        reminderCount = self.db.reminders.count_documents({ "user_id": update.message.from_user.id })
 
-        if len(reminders) > 0:
+        if reminderCount > 0:
             log.info(
-                f"Sending list of {len(reminders)} reminders to {getUserName(update)}"
+                f"Sending list of {reminderCount} reminders to {getUserName(update)}"
             )
             message = ""
-            for reminder in reminders:
+            for reminder in getReminders(self.db, update):
                 message += f'Every {reminder["when"]}: "{reminder["text"]}".\n'
             update.message.reply_text(message)
         else:

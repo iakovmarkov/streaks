@@ -1,5 +1,6 @@
 from configargparse import ArgParser
 from Bot import Bot
+from DB import DB
 import logging
 
 
@@ -34,6 +35,11 @@ def main():
         help=f'Log verbosity. Can be {", ".join(logLevels)}',
         default="INFO",
     )
+    parser.add(
+        "--db",
+        env_var="DB",
+        help='MongoDB String'
+    )
     args = parser.parse_args()
 
     print(f"Log level is {args.logLevel}")
@@ -45,7 +51,8 @@ def main():
     )
     logging.root.setLevel(args.logLevel)
 
-    myBot = Bot(args)
+    myDb = DB(args)
+    Bot(args, myDb)
 
 
 if __name__ == "__main__":
