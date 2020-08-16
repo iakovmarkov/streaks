@@ -24,7 +24,7 @@ def getUserName(update):
 
 
 def getReminders(db, update):
-    return db['reminders'].find({ "user_id": update.message.from_user.id })
+    return db["reminders"].find({"user_id": update.message.from_user.id})
 
 
 class Bot:
@@ -47,15 +47,25 @@ class Bot:
     ## /start
     ## Sends a welcome message listing all possible commands
     def start(self, update, context):
-        update.message.reply_text("Hi!")
+        nl = "\n"  # Python, why won't you allow this in the f-string?
+        commands = [
+            "/create [morning|afternoon|evening] [reminder] - will create a new reminder",
+            "/list - will send you all your reminders",
+            "/delete [id] - will delete a reminder",
+            "/help - this message",
+        ]
+        update.message.reply_text(
+            f"Hi. I am your Care Bot 👋{nl}I know the following commands:{nl.join(commands)}"
+        )
+        update.message.reply_text(f"Made by @iakovmarkov. {nl}Known issues: there is no way to edit the reminder. Delete it and create again 🙏")
 
     ## /create [morning|afternoon|evening] [reminder]
     ## Creates a new reminder for the user
     def create(self, update, context):
         message = update.message.text.replace("/create", "").strip()
-        
+
         when = message.split()[0]
-        
+
         textFragments = message.split()
         textFragments.remove(when)
         text = " ".join(textFragments)
@@ -64,7 +74,11 @@ class Bot:
         textOk = len(text) > 0
 
         if whenOk and textOk:
-            reminder = { "when": when, "text": text, "user_id": update.message.from_user.id }
+            reminder = {
+                "when": when,
+                "text": text,
+                "user_id": update.message.from_user.id,
+            }
             id = self.db.reminders.insert_one(reminder).inserted_id
             log.info(f"Saved reminder ({id}): {when} {text} from {getUserName(update)}")
             update.message.reply_text(f'Will remind you "{text}" every {when}')
@@ -79,27 +93,31 @@ class Bot:
     def delete(self, update, context):
         id = update.message.text.replace("/delete", "").strip()
 
-        if (id == None):
+        if id == None:
             update.message.reply_text("Correct format: /delete [id]")
             return
 
-        filter = { "_id": ObjectId(id), "user_id": update.message.from_user.id }
+        filter = {"_id": ObjectId(id), "user_id": update.message.from_user.id}
 
         reminder = self.db.reminders.find_one(filter)
 
-        if (reminder == None):
+        if reminder == None:
             update.message.reply_text("Not found")
-            log.warn(f'Could not delete reminder {id} for {getUserName(update)}')
+            log.warn(f"Could not delete reminder {id} for {getUserName(update)}")
             return
 
         self.db.reminders.remove(filter)
-        log.info(f'Deleted reminder {id} for {getUserName(update)}')
-        update.message.reply_text(f'I will not remind you to "{reminder["text"]}" every {reminder["when"]} then.')
+        log.info(f"Deleted reminder {id} for {getUserName(update)}")
+        update.message.reply_text(
+            f'I will not remind you to "{reminder["text"]}" every {reminder["when"]} then.'
+        )
 
     ## /list
     ## Lists all reminders for the user
     def list(self, update, context):
-        reminderCount = self.db.reminders.count_documents({ "user_id": update.message.from_user.id })
+        reminderCount = self.db.reminders.count_documents(
+            {"user_id": update.message.from_user.id}
+        )
 
         if reminderCount > 0:
             log.info(
