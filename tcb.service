@@ -3,7 +3,7 @@ Description=Tiny Care Bot
 After=network.target
 
 [Service]
-WorkingDirectory=/usr/bin/tinyCareBot
+WorkingDirectory=/usr/bin/tcb
 ExecStart=/usr/bin/python3 . --logFormat='SHORT'
 Restart=on-failure
 

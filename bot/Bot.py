@@ -44,9 +44,13 @@ class Bot:
         log.info("Bot listening")
         self.updater.idle()
 
+    ## /start
+    ## Sends a welcome message listing all possible commands
     def start(self, update, context):
         update.message.reply_text("Hi!")
 
+    ## /create [morning|afternoon|evening] [reminder]
+    ## Creates a new reminder for the user
     def create(self, update, context):
         message = update.message.text.replace("/create", "").strip()
         
@@ -70,8 +74,15 @@ class Bot:
                 "Correct format: /create [morning|afternoon|evening] [reminder]"
             )
 
+    ## /delete [id]
+    ## Checks if the reminder belongs to the user, and removes the reminder.
     def delete(self, update, context):
         id = update.message.text.replace("/delete", "").strip()
+
+        if (id == None):
+            update.message.reply_text("Correct format: /delete [id]")
+            return
+
         filter = { "_id": ObjectId(id), "user_id": update.message.from_user.id }
 
         reminder = self.db.reminders.find_one(filter)
@@ -85,6 +96,8 @@ class Bot:
         log.info(f'Deleted reminder {id} for {getUserName(update)}')
         update.message.reply_text(f'I will not remind you to "{reminder["text"]}" every {reminder["when"]} then.')
 
+    ## /list
+    ## Lists all reminders for the user
     def list(self, update, context):
         reminderCount = self.db.reminders.count_documents({ "user_id": update.message.from_user.id })
 
