@@ -41,15 +41,13 @@ def main():
         help='MongoDB String'
     )
     args = parser.parse_args()
-
-    print(f"Log level is {args.logLevel}")
-
     logging.basicConfig(
         level=args.logLevel,
         format=logFormats[args.logFormat],
         datefmt="%d-%b-%y %H:%M:%S",
     )
     logging.root.setLevel(args.logLevel)
+    print(f"Log level is {args.logLevel}")
 
     myDb = DB(args)
     Bot(args, myDb)

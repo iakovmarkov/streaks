@@ -1,3 +1,4 @@
+from bson.objectid import ObjectId
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (
     Updater,
@@ -47,9 +48,13 @@ class Bot:
         update.message.reply_text("Hi!")
 
     def create(self, update, context):
-        message = update.message.text.replace("/create", "")
+        message = update.message.text.replace("/create", "").strip()
+        
         when = message.split()[0]
-        text = message.split(" ", 2)[2]
+        
+        textFragments = message.split()
+        textFragments.remove(when)
+        text = " ".join(textFragments)
 
         whenOk = when in set(item.value for item in ReminderTimeslot)
         textOk = len(text) > 0
@@ -66,9 +71,19 @@ class Bot:
             )
 
     def delete(self, update, context):
-        reminders = getReminders(self.db, update)
-        id = update.message.text.replace("/delete", "")
-        update.message.reply_text("Not found")
+        id = update.message.text.replace("/delete", "").strip()
+        filter = { "_id": ObjectId(id), "user_id": update.message.from_user.id }
+
+        reminder = self.db.reminders.find_one(filter)
+
+        if (reminder == None):
+            update.message.reply_text("Not found")
+            log.warn(f'Could not delete reminder {id} for {getUserName(update)}')
+            return
+
+        self.db.reminders.remove(filter)
+        log.info(f'Deleted reminder {id} for {getUserName(update)}')
+        update.message.reply_text(f'I will not remind you to "{reminder["text"]}" every {reminder["when"]} then.')
 
     def list(self, update, context):
         reminderCount = self.db.reminders.count_documents({ "user_id": update.message.from_user.id })
@@ -79,7 +94,7 @@ class Bot:
             )
             message = ""
             for reminder in getReminders(self.db, update):
-                message += f'Every {reminder["when"]}: "{reminder["text"]}".\n'
+                message += f'Every {reminder["when"]}: "{reminder["text"]}" ({reminder["_id"]}).\n'
             update.message.reply_text(message)
         else:
             log.info(f"{getUserName(update)} has no remidners yet")
