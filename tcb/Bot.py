@@ -7,16 +7,10 @@ from telegram.ext import (
     Filters,
     ConversationHandler,
 )
-from enum import Enum
+from ReminderTimeslot import ReminderTimeslot
 import logging
 
 log = logging.getLogger(__name__)
-
-
-class ReminderTimeslot(Enum):
-    MORNING = "morning"
-    AFTERNOON = "afternoon"
-    EVENING = "evening"
 
 
 def getUserName(update):

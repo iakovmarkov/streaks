@@ -10,6 +10,7 @@ python-telegram-bot = "*"
 configargparse = "*"
 pymongo = {extras = ["tls"], version = "*"}
 dnspython = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.8"
