@@ -1,6 +1,7 @@
 from shared import argparseSetup, logSetup, mongoSetup
 from Bot import Bot
 
+
 def main():
     parser = argparseSetup(
         description="Telegram bot to remind me to keep my meatbag in check"

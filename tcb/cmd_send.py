@@ -1,6 +1,7 @@
 from sendMessages import sendMessages
 from shared import argparseSetup, logSetup, mongoSetup
 
+
 def main():
     parser = argparseSetup(description="Message sender application")
     args = parser.parse_args()
@@ -17,4 +18,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

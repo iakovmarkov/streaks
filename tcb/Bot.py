@@ -52,7 +52,9 @@ class Bot:
         update.message.reply_text(
             f"Hi. I am your Care Bot 👋{nl}I know the following commands:{nl.join(commands)}"
         )
-        update.message.reply_text(f"Made by @iakovmarkov. {nl}Known issues: there is no way to edit the reminder. Delete it and create again 🙏")
+        update.message.reply_text(
+            f"Made by @iakovmarkov. {nl}Known issues: there is no way to edit the reminder. Delete it and create again 🙏"
+        )
 
     ## /create [morning|afternoon|evening] [reminder]
     ## Creates a new reminder for the user
@@ -88,7 +90,7 @@ class Bot:
     def delete(self, update, context):
         id = update.message.text.replace("/delete", "").strip()
 
-        if id == None or id == '':
+        if id == None or id == "":
             update.message.reply_text("Correct format: /delete [id]")
             return
 
@@ -134,18 +136,13 @@ class Bot:
         if tz == None or tz == "":
             update.message.reply_text("Correct format: /timezone [tz]")
             return
-        
+
         try:
-            filter = {"user_id": uid }
-            self.db.users.update(filter, {**filter, "tz": int(tz) }, upsert=True)
+            filter = {"user_id": uid}
+            self.db.users.update(filter, {**filter, "tz": int(tz)}, upsert=True)
 
             log.info(f"Set TZ to {tz} for {getUserName(update)}")
-            update.message.reply_text(
-                f'Set your timezone to {tz}'
-            )
+            update.message.reply_text(f"Set your timezone to {tz}")
         except Exception as e:
             log.error(f"Error setting TZ to '{tz}' for {getUserName(update)}: {e}")
-            update.message.reply_text(
-                f'Sorry, something went wrong.'
-            )
-
+            update.message.reply_text(f"Sorry, something went wrong.")

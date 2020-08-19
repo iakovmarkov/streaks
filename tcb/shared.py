@@ -18,7 +18,7 @@ logFormats = {
 
 def argparseSetup(description):
     parser = ArgParser(description)
-    
+
     parser.add(
         "--logFormat",
         env_var="LOG_FORMAT",
@@ -60,4 +60,3 @@ def mongoSetup(args):
 
     logging.info("Connected to MongoDB")
     return client
-
