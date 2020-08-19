@@ -1,5 +1,5 @@
 from bson.objectid import ObjectId
-from telegram import ReplyKeyboardMarkup
+from ReminderTimeslot import ReminderTimeslot
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -7,7 +7,6 @@ from telegram.ext import (
     Filters,
     ConversationHandler,
 )
-from ReminderTimeslot import ReminderTimeslot
 import logging
 
 log = logging.getLogger(__name__)
@@ -33,6 +32,7 @@ class Bot:
         dispatcher.add_handler(CommandHandler("create", self.create))
         dispatcher.add_handler(CommandHandler("delete", self.delete))
         dispatcher.add_handler(CommandHandler("list", self.list))
+        dispatcher.add_handler(CommandHandler("timezone", self.timezone))
 
         self.updater.start_polling()
         log.info("Bot listening")
@@ -43,9 +43,10 @@ class Bot:
     def start(self, update, context):
         nl = "\n"  # Python, why won't you allow this in the f-string?
         commands = [
-            "/create [morning|afternoon|evening] [reminder] - will create a new reminder",
-            "/list - will send you all your reminders",
-            "/delete [id] - will delete a reminder",
+            "/create [morning|afternoon|evening] [reminder] - create a new reminder",
+            "/list - list all your reminders",
+            "/delete [id] - delete a reminder",
+            "/timezone [tz] - set your time zone (-01, +02, etc)",
             "/help - this message",
         ]
         update.message.reply_text(
@@ -87,12 +88,11 @@ class Bot:
     def delete(self, update, context):
         id = update.message.text.replace("/delete", "").strip()
 
-        if id == None:
+        if id == None or id == '':
             update.message.reply_text("Correct format: /delete [id]")
             return
 
         filter = {"_id": ObjectId(id), "user_id": update.message.from_user.id}
-
         reminder = self.db.reminders.find_one(filter)
 
         if reminder == None:
@@ -124,4 +124,28 @@ class Bot:
         else:
             log.info(f"{getUserName(update)} has no remidners yet")
             update.message.reply_text("You don't have any reminders yet")
+
+    ## /timezonme
+    ## Sets timezone for user
+    def timezone(self, update, context):
+        tz = update.message.text.replace("/timezone", "").strip()
+        uid = update.message.from_user.id
+
+        if tz == None or tz == "":
+            update.message.reply_text("Correct format: /timezone [tz]")
+            return
+        
+        try:
+            filter = {"user_id": uid }
+            self.db.users.update(filter, {**filter, "tz": int(tz) }, upsert=True)
+
+            log.info(f"Set TZ to {tz} for {getUserName(update)}")
+            update.message.reply_text(
+                f'Set your timezone to {tz}'
+            )
+        except Exception as e:
+            log.error(f"Error setting TZ to '{tz}' for {getUserName(update)}: {e}")
+            update.message.reply_text(
+                f'Sorry, something went wrong.'
+            )
 

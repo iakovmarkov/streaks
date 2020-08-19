@@ -18,6 +18,7 @@ logFormats = {
 
 def argparseSetup(description):
     parser = ArgParser(description)
+    
     parser.add(
         "--logFormat",
         env_var="LOG_FORMAT",
@@ -30,7 +31,9 @@ def argparseSetup(description):
         help=f'Log verbosity. Can be {", ".join(logLevels)}',
         default="INFO",
     )
+
     parser.add("--db", env_var="DB", help="MongoDB String")
+    parser.add("--botToken", env_var="BOT_TOKEN", type=str, help="Telegram bot token")
 
     return parser
 

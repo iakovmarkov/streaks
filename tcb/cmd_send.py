@@ -12,7 +12,7 @@ def main():
     except Exception:
         return
 
-    sendMessages(client.get_default_database())
+    sendMessages(args, client.get_default_database())
 
 
 if __name__ == "__main__":

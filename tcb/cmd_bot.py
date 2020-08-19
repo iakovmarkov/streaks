@@ -5,7 +5,6 @@ def main():
     parser = argparseSetup(
         description="Telegram bot to remind me to keep my meatbag in check"
     )
-    parser.add("--botToken", env_var="BOT_TOKEN", type=str, help="Telegram bot token")
     args = parser.parse_args()
 
     logSetup(args)
