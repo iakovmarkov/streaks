@@ -17,3 +17,10 @@
 [ ] Bot - Randomize messages
 [ ] Bot - Greet daily with a :hi: emoji
 [ ] Bot - Weekly stat
+
+## Repo setup
+
+Install hooks:
+
+    pipenv run pre-commit install -t pre-commit
+    pipenv run pre-commit install -t pre-push
