@@ -3,7 +3,6 @@
 [X] Project setup - Git
 [X] Project setup - Bot
 [ ] Deployment - VM
-[ ] Deployment - Systemd unit
 [X] Bot - about
 [X] Deployment - MongoDB
 [X] Bot - schedule a reminder daily (in the morning, in the afternoon, in the evening)
@@ -18,9 +17,25 @@
 [ ] Bot - Greet daily with a :hi: emoji
 [ ] Bot - Weekly stat
 
-## Repo setup
+# Setup
+
+## Production
+
+Install pipenv
+
+    pip install --user pipenv
+
+Install packages
+
+    pipenv sync
+
+## Development
 
 Install hooks:
 
     pipenv run pre-commit install -t pre-commit
     pipenv run pre-commit install -t pre-push
+
+## Deployment
+
+ToDo

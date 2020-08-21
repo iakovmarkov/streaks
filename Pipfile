@@ -12,6 +12,7 @@ pymongo = {extras = ["tls"], version = "*"}
 dnspython = "*"
 pylint = "*"
 pre-commit = "*"
+black = "~=19.10b0"
 
 [requires]
 python_version = "3.8"
