@@ -1,0 +1,88 @@
+---
+- hosts: tcb_bot
+  remote_user: markov
+  become: yes
+  tasks:
+  - name: Install dependencies
+    block:
+      - name: Install Git
+        apt:
+          name: git
+          state: present
+          update_cache: yes
+      - name: Install Python 3
+        apt:
+          name: python3
+          state: present
+      - name: Install Pip
+        apt:
+          name: python3-pip
+          state: present
+
+  - name: create user
+    user:
+      name: tcb
+      shell: /sbin/nologin
+      append: yes
+      state: present
+      create_home: yes
+  
+  - name: Install service
+    block:
+      - name: Copy Bot service
+        copy:
+          src: systemd/bot.service
+          dest: /etc/systemd/system
+          owner: root
+          group: root
+      - name: Copy Sender service
+        copy:
+          src: systemd/sender.service
+          dest: /etc/systemd/system
+          owner: root
+          group: root
+      - name: Reload units
+        systemd:
+          daemon_reexec: yes
+  
+  - name: Stop TCB
+    block:
+      - name: Stop Bot
+        systemd:
+          name: bot
+          state: stopped
+          enabled: yes
+      - name: Stop Sender
+        systemd:
+          name: sender
+          state: stopped
+          enabled: yes
+
+  - name: Install latest TCB
+    block:
+    - name: Clone repo
+      git:
+        repo: git@github.com:iakovmarkov/tcb.git
+        dest: /opt/tcb
+        accept_hostkey: true
+        key_file: /home/markov/.ssh/id_rsa
+        force: yes
+    - name: install packages
+      command: pipenv sync
+      become: yes
+      become_user: tcb
+      args:
+        chdir: /opt/tcb
+  
+  - name: Start TCB
+    block:
+      - name: Start Bot
+        systemd:
+          name: bot
+          state: started
+          enabled: yes
+      - name: Start Sender
+        systemd:
+          name: sender
+          state: started
+          enabled: yes
