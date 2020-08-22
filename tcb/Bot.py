@@ -30,6 +30,7 @@ class Bot:
         dispatcher.add_handler(CommandHandler("start", self.start))
         dispatcher.add_handler(CommandHandler("help", self.start))
         dispatcher.add_handler(CommandHandler("create", self.create))
+        dispatcher.add_handler(CommandHandler("remind", self.create))
         dispatcher.add_handler(CommandHandler("delete", self.delete))
         dispatcher.add_handler(CommandHandler("list", self.list))
         dispatcher.add_handler(CommandHandler("timezone", self.timezone))

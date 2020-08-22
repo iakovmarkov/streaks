@@ -2,7 +2,7 @@
 
 [X] Project setup - Git
 [X] Project setup - Bot
-[ ] Deployment - VM
+[X] Deployment - VM
 [X] Bot - about
 [X] Deployment - MongoDB
 [X] Bot - schedule a reminder daily (in the morning, in the afternoon, in the evening)
@@ -17,29 +17,3 @@
 [ ] Bot - Greet daily with a :hi: emoji
 [ ] Bot - Weekly stat
 
-# Setup
-
-## Production
-
-Install pipenv
-
-    pip install --user pipenv
-
-Install packages
-
-    pipenv sync
-
-## Development
-
-Install hooks:
-
-    pipenv run pre-commit install -t pre-commit
-    pipenv run pre-commit install -t pre-push
-
-## Deployment
-
-Run ansible playbook:
-
-    ansible-playbook ansible.yaml
-
-It requires host `tcb` to be in your inventory. Put the secrets in `/etc/environment`.

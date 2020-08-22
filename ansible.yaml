@@ -1,5 +1,5 @@
 ---
-- hosts: tcb_bot
+- hosts: tcb
   remote_user: markov
   become: yes
   tasks:
@@ -41,9 +41,15 @@
           dest: /etc/systemd/system
           owner: root
           group: root
+      - name: Copy Sender timer
+        copy:
+          src: systemd/sender.timer
+          dest: /etc/systemd/system
+          owner: root
+          group: root
       - name: Reload units
         systemd:
-          daemon_reexec: yes
+          daemon_reload: yes
   
   - name: Stop TCB
     block:
@@ -54,7 +60,7 @@
           enabled: yes
       - name: Stop Sender
         systemd:
-          name: sender
+          name: sender.service
           state: stopped
           enabled: yes
 
@@ -83,6 +89,10 @@
           enabled: yes
       - name: Start Sender
         systemd:
-          name: sender
+          name: sender.service
           state: started
+          enabled: yes
+      - name: Start Sender Timer
+        systemd:
+          name: sender.timer
           enabled: yes

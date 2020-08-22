@@ -28,6 +28,12 @@ def sendMessages(args, db):
 
         for user in timeslotUsers:
             filter = {"user_id": user["user_id"], "when": timeSlot.value}
-            reminders = db.reminders.find(filter)
-            for reminder in reminders:
-                bot.send_message(chat_id=reminder["user_id"], text=reminder["text"])
+            count = db.reminders.count_documents(filter)
+
+            if count > 0:
+                reminders = db.reminders.find(filter)
+                for reminder in reminders:
+                    bot.send_message(chat_id=reminder["user_id"], text=reminder["text"])
+                log.debug(f"Sent {count} to {user['user_id']}")
+            else:
+                log.debug(f"User {user['user_id']} has no reminders for this time slot")

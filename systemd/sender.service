@@ -8,10 +8,3 @@ Type=oneshot
 WorkingDirectory=/opt/tcb
 ExecStart=/usr/local/bin/pipenv run python tcb/cmd_send.py
 EnvironmentFile=/etc/environment
-
-[Timer]
-OnCalendar=hourly
-Persistent=true
-
-[Install]
-WantedBy=timers.target
