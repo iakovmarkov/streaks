@@ -6,5 +6,5 @@ After=network.target
 User=tcb
 Type=oneshot
 WorkingDirectory=/opt/tcb
-ExecStart=/usr/local/bin/pipenv run python tcb/cmd_send.py
+ExecStart=/usr/local/bin/pipenv run python tcb send
 EnvironmentFile=/etc/environment
