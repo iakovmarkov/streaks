@@ -8,11 +8,13 @@ verify_ssl = true
 [packages]
 python-telegram-bot = "*"
 configargparse = "*"
-pymongo = {extras = ["tls"], version = "*"}
-dnspython = "*"
 pylint = "*"
 pre-commit = "*"
-black = "~=19.10b0"
+sqlalchemy = "*"
+black = "*"
 
 [requires]
 python_version = "3.8"
+
+[pipenv]
+allow_prereleases = true

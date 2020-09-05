@@ -1,8 +1,10 @@
 import logging
 from sendMessages import sendMessages
 from Bot import Bot
-from pymongo import MongoClient
 from configargparse import ArgParser
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from models import User, Streak
 
 logLevels = [
     "DEBUG",
@@ -17,8 +19,9 @@ logFormats = {
     "SHORT": "%(message)s",
 }
 
+
 def main():
-    parser = ArgParser(description="Telegram bot to remind me to keep my meatbag in check")
+    parser = ArgParser(description="Telegram bot to help humans build better habits")
 
     parser.add(
         "command",
@@ -37,14 +40,20 @@ def main():
         default="INFO",
     )
 
-    parser.add("--db", env_var="DB", help="MongoDB String")
+    parser.add(
+        "--db",
+        env_var="DB",
+        default="streak_bot.db",
+        help="SQLite3 DB file name, default 'streak_bot.db'",
+    )
     parser.add("--botToken", env_var="BOT_TOKEN", type=str, help="Telegram bot token")
 
     args = parser.parse_args()
+    print(f"Log level is {args.logLevel}")
 
-    if (args.command == 'bot'):
+    if args.command == "bot":
         command = Bot
-    elif (args.command == 'send'):
+    elif args.command == "send":
         command = sendMessages
     else:
         print(f"Command {args.command} is not valid.")
@@ -57,20 +66,22 @@ def main():
         datefmt="%d-%b-%y %H:%M:%S",
     )
     logging.root.setLevel(args.logLevel)
-    print(f"Log level is {args.logLevel}")
 
     try:
-        logging.info("Connecting to MongoDB...")
-        client = MongoClient(args.db, serverSelectionTimeoutMS=3000)
-        client.server_info()
+        logging.info(f"Using DB: {args.db}")
+        engine = create_engine(f"sqlite:///{args.db}")
+
+        User.init(engine)
+        Streak.init(engine)
+
+        Session = sessionmaker(bind=engine)
+        session = Session()
     except Exception as e:
         logging.error(e)
-        logging.error("Error connecting to MongoDB, exiting")
+        logging.error("DB check failed, exiting")
         return
 
-    logging.info("Connected to MongoDB")
-
-    command(args, client.get_default_database())
+    command(args, session)
 
 
 if __name__ == "__main__":
