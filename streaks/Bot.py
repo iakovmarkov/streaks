@@ -1,17 +1,19 @@
 from bson.objectid import ObjectId
 from telegram.ext import (
     Updater,
+    CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
     Filters,
     ConversationHandler,
 )
-from telegram import Update
+from telegram import Update, ParseMode
 import logging
 from sqlalchemy.orm import Session
 from models.User import User
 from models.Streak import Streak
 from utils import getUserName
+from datetime import datetime, timedelta
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +33,7 @@ class Bot:
         dispatcher.add_handler(CommandHandler("delete", self.delete))
         dispatcher.add_handler(CommandHandler("list", self.list))
         dispatcher.add_handler(CommandHandler("timezone", self.timezone))
+        dispatcher.add_handler(CallbackQueryHandler(self.handle_button))
 
         self.updater.start_polling()
         log.info("Bot listening")
@@ -170,3 +173,54 @@ class Bot:
             self.session.rollback()
             log.error(f"Error setting TZ to '{tz}' for {getUserName(update)}: {e}")
             update.message.reply_text(f"Sorry, something went wrong.")
+
+    def handle_button(self, update: Update, context):
+        query = update.callback_query
+        streak_id = query.data
+
+        try:
+            streak = self.session.query(Streak).get(streak_id)
+
+            if streak.last_track_date and streak.last_track_date > streak.prev_date:
+                log.warn(
+                    f"Streak {streak_id} already tracked after it's been sent, ignoring"
+                )
+                query.answer(text="This has been already tracked")
+                query.edit_message_text(text=query.message.text, reply_markup=None)
+                return
+
+            streak.last_track_date = datetime.now()
+            streak.count_total += 1
+
+            if streak.prev_date > datetime.now() - timedelta(hours=23, minutes=45):
+                streak.count_streak += 1
+
+                if streak.count_total > streak.longest:
+                    streak.longest = streak.count_total
+
+                log.info(f"Tracking {streak_id} +1 to {streak.count_streak}")
+                query.answer(text="✅ Done!")
+                query.edit_message_text(
+                    text=f"✅ ~{query.message.text}~",
+                    parse_mode=ParseMode.MARKDOWN_V2,
+                    reply_markup=None,
+                )
+            else:
+                streak.count_streak = 1
+                log.info(f"Reset {streak_id} to 1.")
+                query.answer(
+                    text=f"Looks like you've lost your streak of {streak.count_streak}. Starting from beginning."
+                )
+                query.edit_message_text(
+                    text=f"✅ ~{query.message.text}~",
+                    parse_mode=ParseMode.MARKDOWN_V2,
+                    reply_markup=None,
+                )
+
+            self.session.add(streak)
+            self.session.commit()
+        except Exception as e:
+            self.session.rollback()
+            log.error(f"Error commiting {streak_id} to D    B: {e}")
+            query.answer(text="Something went wrong.")
+            return

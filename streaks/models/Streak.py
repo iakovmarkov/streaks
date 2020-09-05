@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from models.User import User
 from datetime import date, timedelta
@@ -24,8 +24,9 @@ class Streak(Base):
     title = Column(String)
     user_id = Column(String, ForeignKey(User.id))
     when = Column(String, default="1d")
-    prev_date = Column(Date)
+    prev_date = Column(DateTime)
     next_date = Column(Date)
+    last_track_date = Column(DateTime)
     count_total = Column(Integer, default=0)
     count_streak = Column(Integer, default=0)
     longest = Column(Integer, default=0)
