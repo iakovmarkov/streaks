@@ -23,4 +23,4 @@ Run ansible playbook:
 
     ansible-playbook ansible.yaml
 
-It requires host `tcb` to be in your inventory. Put the secrets in `/etc/environment`.
+It requires host `streaks_server` to be in your inventory. Put the secrets in `/etc/environment`.

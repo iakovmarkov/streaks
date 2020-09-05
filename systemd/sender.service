@@ -3,8 +3,8 @@ Description=Sender
 After=network.target
 
 [Service]
-User=tcb
+User=streaks
 Type=oneshot
-WorkingDirectory=/opt/tcb
-ExecStart=/usr/local/bin/pipenv run python tcb send
+WorkingDirectory=/opt/streaks
+ExecStart=/usr/local/bin/pipenv run python streaks send
 EnvironmentFile=/etc/environment

@@ -1,5 +1,5 @@
 ---
-- hosts: tcb
+- hosts: streaks_server
   remote_user: markov
   become: yes
   tasks:
@@ -21,7 +21,7 @@
 
   - name: create user
     user:
-      name: tcb
+      name: streaks
       shell: /sbin/nologin
       append: yes
       state: present
@@ -51,7 +51,7 @@
         systemd:
           daemon_reload: yes
   
-  - name: Stop TCB
+  - name: Stop services
     block:
       - name: Stop Bot
         systemd:
@@ -64,23 +64,23 @@
           state: stopped
           enabled: yes
 
-  - name: Install latest TCB
+  - name: Install latest bot
     block:
     - name: Clone repo
       git:
-        repo: git@github.com:iakovmarkov/tcb.git
-        dest: /opt/tcb
+        repo: git@github.com:iakovmarkov/streaks_bot.git
+        dest: /opt/streaks
         accept_hostkey: true
         key_file: /home/markov/.ssh/id_rsa
         force: yes
     - name: install packages
       command: pipenv sync
       become: yes
-      become_user: tcb
+      become_user: streaks
       args:
-        chdir: /opt/tcb
+        chdir: /opt/streaks
   
-  - name: Start TCB
+  - name: Start services
     block:
       - name: Start Bot
         systemd:

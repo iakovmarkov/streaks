@@ -3,9 +3,9 @@ Description=Bot
 After=network.target
 
 [Service]
-User=tcb
-WorkingDirectory=/opt/tcb
-ExecStart=/usr/local/bin/pipenv run python tcb bot
+User=streaks
+WorkingDirectory=/opt/streaks
+ExecStart=/usr/local/bin/pipenv run python streaks bot
 EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=500ms
