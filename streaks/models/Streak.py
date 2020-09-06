@@ -2,10 +2,9 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from models.User import User
-from datetime import date, timedelta
-from utils import patterns
+from datetime import date
+from utils.Pattern import patterns
 import uuid
-import re
 
 Base = declarative_base()
 

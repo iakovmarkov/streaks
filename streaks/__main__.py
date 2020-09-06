@@ -1,5 +1,5 @@
 import logging
-from sendMessages import sendMessages
+from sender import send
 from Bot import Bot
 from configargparse import ArgParser
 from sqlalchemy import create_engine
@@ -54,7 +54,7 @@ def main():
     if args.command == "bot":
         command = Bot
     elif args.command == "send":
-        command = sendMessages
+        command = send
     else:
         print(f"Command {args.command} is not valid.")
         print(parser.format_help())

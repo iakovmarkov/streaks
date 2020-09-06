@@ -1,22 +1,32 @@
-from bson.objectid import ObjectId
 from telegram.ext import (
     Updater,
     CallbackQueryHandler,
     CommandHandler,
-    MessageHandler,
-    Filters,
-    ConversationHandler,
 )
-from telegram import Update, ParseMode
+from telegram import Update
 from sqlalchemy.orm import Session
 from models.User import User
 from models.Streak import Streak
-from utils import getUserName
+from utils.getUserName import getUserName
+from utils.callbacks import CallbackKeys
 from datetime import datetime, timedelta, time, timezone
 import json
 import logging
+from commands import commands
+from commands.Command import Command
+import re
 
 log = logging.getLogger(__name__)
+nl = "\n"  # Python, why won't you allow this in the f-string?
+
+
+def clean_message(update: Update):
+    text = update.message.text
+    match = re.search(r"(\/\w+) (.+)", text)
+    if match:
+        return match.group(2).strip()
+    else:
+        return text
 
 
 class Bot:
@@ -27,205 +37,77 @@ class Bot:
 
         dispatcher = self.updater.dispatcher
         dispatcher.add_handler(CommandHandler("start", self.start))
-        dispatcher.add_handler(CommandHandler("help", self.start))
-        dispatcher.add_handler(CommandHandler("create", self.create))
-        dispatcher.add_handler(CommandHandler("track", self.create))
-        dispatcher.add_handler(CommandHandler("remind", self.create))
-        dispatcher.add_handler(CommandHandler("delete", self.delete))
-        dispatcher.add_handler(CommandHandler("list", self.list))
-        dispatcher.add_handler(CommandHandler("timezone", self.timezone))
-        dispatcher.add_handler(CallbackQueryHandler(self.handle_button))
+        dispatcher.add_handler(CommandHandler("help", self.help))
+        self.register(dispatcher, commands.Create)
+        self.register(dispatcher, commands.List)
+        self.register(dispatcher, commands.Timezone)
+        dispatcher.add_handler(CallbackQueryHandler(self.callback_handler))
 
         self.updater.start_polling()
         log.info("Bot listening")
         self.updater.idle()
 
-    ## /start
-    ## Sends a welcome message listing all possible commands
+    def handle(self, command: Command):
+        return lambda update, context: command.run(
+            bot=self, update=update, context=context
+        )
+
+    def register(self, dispatcher, command: Command):
+        dispatcher.add_handler(CommandHandler(command.command, self.handle(command)))
+
     def start(self, update, context):
-        nl = "\n"  # Python, why won't you allow this in the f-string?
-        commands = [
-            "/create [morning|afternoon|evening] [reminder] - create a new reminder",
-            "/list - list all your reminders",
-            "/delete [id] - delete a reminder",
-            "/timezone [tz] - set your time zone (-01, +02, etc)",
-            "/help - this message",
+        lines = [
+            "Hi. I am Streaks Bot.",
+            "My purpose is to help you build new habits. You can add new habits using /create command. I will send you periodicall reminders, and you will mark them as done once you finish them.",
+            "The reminder system is very flexible. You can create reminders for every N days, or schedule them on weekdays. Once a week you will receive a summary of your activity.",
+            "To see a list of all commands, send /help. You also should send timezone - send /timezone.",
+            "Remember - try to keep the number of goals small (under five), and the tasks themselves easily doable. This will help you build habits that last.",
         ]
+        update.message.reply_text(f"{nl}{nl}".join(lines))
+
+    def help(self, update, context):
+        descr = []
+        args = clean_message(update)
+
+        command_list = [commands.Create, commands.List, commands.Timezone]
+
+        if args:
+            for command in command_list:
+                if command.command == args:
+                    update.message.reply_text(
+                        command.help(bot=self, update=update, context=context)
+                    )
+                    return
+
+        for command in command_list:
+            descr.append(
+                f"/{command.command} - {command.describe(bot=self, update=update, context=context)}"
+            )
+
         update.message.reply_text(
-            f"Hi. I am your Care Bot 👋{nl}I know the following commands:{nl}{nl.join(commands)}"
-        )
-        update.message.reply_text(
-            f"Made by @iakovmarkov. {nl}Known issues: there is no way to edit the reminder. Delete it and create again 🙏"
+            f"I know the following commands:{nl}{nl.join(descr)}{nl}To get more help, type `/help command`."
         )
 
-    ## /create [morning|afternoon|evening] [streak]
-    ## Creates a new streak for the user
-    def create(self, update: Update, context):
-        message = update.message.text.replace("/create", "").strip()
-
-        uid = update.message.from_user.id
-        when = message.split()[0]
-
-        textFragments = message.split()
-        textFragments.remove(when)
-        text = " ".join(textFragments)
-
-        whenOk = True
-        textOk = len(text) > 0
-
-        if not (whenOk and textOk):
-            log.info(f"Received malformed message: {message}")
-            update.message.reply_text(
-                "Correct format: /create [morning|afternoon|evening] [reminder]"
-            )
-            return
-
-        # try:
-        user = self.session.query(User).get(uid) or User(id=uid)
-        streak = Streak(title=text, user=uid, when=when)
-
-        self.session.add_all([user, streak])
-        self.session.commit()
-
-        log.info(
-            f"Saved streak ({streak.id}): {when} {text} from {getUserName(update)}"
-        )
-        update.message.reply_text(f'Will remind you "{text}" every {when}')
-        # except Exception as e:
-        #     self.session.rollback()
-        #     log.error(
-        #         f"Error creating '{when}' / '{text}' for {getUserName(update)}: {e}"
-        #     )
-        #     update.message.reply_text(f"Sorry, something went wrong.")
-
-    ## /delete [id]
-    ## Checks if the reminder belongs to the user, and removes the reminder.
-    def delete(self, update, context):
-        id = update.message.text.replace("/delete", "").strip()
-        uid = update.message.from_user.id
-
-        if id == None or id == "":
-            update.message.reply_text("Correct format: /delete [id]")
-            return
-
-        # filter = {"_id": ObjectId(id), "user_id": update.message.from_user.id}
-        streak = self.session.query(Streak).filter(
-            Streak.id == id, Streak.user_id == uid
-        )
-
-        if streak.count() == 0:
-            update.message.reply_text("Not found")
-            log.warn(f"Could not delete reminder {id} for {getUserName(update)}")
-            return
-
-        try:
-            streak = streak.first()
-            when = streak.when
-            title = streak.title
-            self.session.delete(streak)
-            self.session.commit()
-
-            log.info(f"Deleted reminder {id} for {getUserName(update)}")
-            update.message.reply_text(
-                f'I will not remind you to "{title}" every {when} then.'
-            )
-        except Exception as e:
-            self.session.rollback()
-            log.error(f"Error deleting '{id}' for {getUserName(update)}: {e}")
-            update.message.reply_text(f"Sorry, something went wrong.")
-
-    ## /list
-    ## Lists all streaks for the user
-    def list(self, update, context):
-        uid = update.message.from_user.id
-        streaks = self.session.query(Streak).filter_by(user_id=uid)
-
-        if streaks.count() > 0:
-            log.info(
-                f"Sending list of {streaks.count()} streaks to {getUserName(update)}"
-            )
-            message = ""
-            for streak in streaks.all():
-                message += f'Every {streak.when}: "{streak.title}" ({streak.id}).\n'
-            update.message.reply_text(message)
-        else:
-            log.info(f"{getUserName(update)} has no remidners yet")
-            update.message.reply_text("You don't have any reminders yet")
-
-    ## /timezonme
-    ## Sets timezone for user
-    def timezone(self, update: Update, context):
-        tz = update.message.text.replace("/timezone", "").strip()
-        uid = update.message.from_user.id
-
-        if tz == None or tz == "":
-            update.message.reply_text("Correct format: /timezone [tz]")
-            return
-
-        tz = int(tz)
-
-        try:
-            user = self.session.query(User).get(uid) or User(id=uid)
-            user.timezone = tz
-            self.session.add(user)
-            self.session.commit()
-
-            log.info(f"Set TZ to {tz} for {getUserName(update)}")
-            update.message.reply_text(f"Set your timezone to {tz}")
-        except Exception as e:
-            self.session.rollback()
-            log.error(f"Error setting TZ to '{tz}' for {getUserName(update)}: {e}")
-            update.message.reply_text(f"Sorry, something went wrong.")
-
-    def handle_button(self, update: Update, context):
+    def callback_handler(self, update: Update, context):
         query = update.callback_query
 
         try:
-            data = json.loads(query.data)
-            print(data)
-            streak_id = data["id"]
-            streak = self.session.query(Streak).get(streak_id)
+            callback_data = json.loads(query.data)
+            command = callback_data[CallbackKeys.COMMAND.value]
+            payload = callback_data[CallbackKeys.PAYLOAD.value]
 
-            if streak.last_track_date and streak.last_track_date > streak.prev_date:
-                log.warn(
-                    f"Streak {streak_id} already tracked after it's been sent, ignoring"
-                )
-                query.answer(text="This has been already tracked")
-                query.edit_message_text(text=query.message.text, reply_markup=None)
-                return
-
-            streak.last_track_date = datetime.now()
-            streak.count_total += 1
-
-            if streak.prev_date > datetime.now() - timedelta(hours=23, minutes=45):
-                streak.count_streak += 1
-
-                if streak.count_total > streak.longest:
-                    streak.longest = streak.count_total
-
-                log.info(f"Tracking {streak_id} +1 to {streak.count_streak}")
-                query.answer(text="✅ Done!")
-                query.edit_message_text(
-                    text=f"✅ ~{query.message.text}~",
-                    parse_mode=ParseMode.MARKDOWN_V2,
-                    reply_markup=None,
-                )
+            if command == commands.Complete.command:
+                commands.Complete.run(bot=self, update=update, payload=payload)
+            elif command == commands.Delete.command:
+                commands.Delete.run(bot=self, update=update, payload=payload)
             else:
-                streak.count_streak = 1
-                log.info(f"Reset {streak_id} to 1.")
-                query.answer(
-                    text=f"Looks like you've lost your streak of {streak.count_streak}. Starting from beginning."
-                )
-                query.edit_message_text(
-                    text=f"✅ ~{query.message.text}~",
-                    parse_mode=ParseMode.MARKDOWN_V2,
-                    reply_markup=None,
+                log.warn(
+                    f"Could not find handler for callback: {command} - {payload} from {getUserName(update)}"
                 )
 
-            self.session.add(streak)
-            self.session.commit()
         except Exception as e:
             self.session.rollback()
-            log.error(f"Error commiting {streak_id} to D    B: {e}")
+            log.error(
+                f"Error handling command {command} from {getUserName(update)}: {e}"
+            )
             query.answer(text="Something went wrong.")
-            return
