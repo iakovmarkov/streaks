@@ -68,7 +68,7 @@
     block:
     - name: Clone repo
       git:
-        repo: git@github.com:iakovmarkov/streaks_bot.git
+        repo: git@github.com:iakovmarkov/streaks.git
         dest: /opt/streaks
         accept_hostkey: true
         key_file: /home/markov/.ssh/id_rsa

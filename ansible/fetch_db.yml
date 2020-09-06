@@ -1,0 +1,9 @@
+---
+- hosts: streaks_server
+  remote_user: markov
+  become: yes
+  tasks:
+    - fetch:
+        src: /opt/streaks/streak_bot.db
+        dest: ../streak_bot_prod.db
+        flat: true

@@ -28,13 +28,13 @@ def main():
         help="Command to execute. Can be 'bot' or 'send'.",
     )
     parser.add(
-        "--logFormat",
+        "--log_format",
         env_var="LOG_FORMAT",
         help="Log format. Can be SHORT or LONG",
         default="LONG",
     )
     parser.add(
-        "--logLevel",
+        "--log_level",
         env_var="LOG_LEVEL",
         help=f'Log verbosity. Can be {", ".join(logLevels)}',
         default="INFO",
@@ -46,7 +46,7 @@ def main():
         default="streak_bot.db",
         help="SQLite3 DB file name, default 'streak_bot.db'",
     )
-    parser.add("--botToken", env_var="BOT_TOKEN", type=str, help="Telegram bot token")
+    parser.add("--bot_token", env_var="BOT_TOKEN", type=str, help="Telegram bot token")
 
     args = parser.parse_args()
     print(f"Log level is {args.logLevel}")
