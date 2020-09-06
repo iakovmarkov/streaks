@@ -11,8 +11,6 @@ class User(Base):
 
     id = Column(String, primary_key=True)
     timezone = Column(Integer, default=0)
-    morning_time = Column(Time, default=time(9, 0))
-    evening_time = Column(Time, default=time(22, 00))
 
 
 def init(engine):

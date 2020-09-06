@@ -8,12 +8,13 @@ from telegram.ext import (
     ConversationHandler,
 )
 from telegram import Update, ParseMode
-import logging
 from sqlalchemy.orm import Session
 from models.User import User
 from models.Streak import Streak
 from utils import getUserName
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time, timezone
+import json
+import logging
 
 log = logging.getLogger(__name__)
 
@@ -161,6 +162,8 @@ class Bot:
             update.message.reply_text("Correct format: /timezone [tz]")
             return
 
+        tz = int(tz)
+
         try:
             user = self.session.query(User).get(uid) or User(id=uid)
             user.timezone = tz
@@ -176,9 +179,11 @@ class Bot:
 
     def handle_button(self, update: Update, context):
         query = update.callback_query
-        streak_id = query.data
 
         try:
+            data = json.loads(query.data)
+            print(data)
+            streak_id = data["id"]
             streak = self.session.query(Streak).get(streak_id)
 
             if streak.last_track_date and streak.last_track_date > streak.prev_date:
