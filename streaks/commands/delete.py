@@ -1,7 +1,6 @@
 from commands.Command import Command
-from models.User import User
 from models.Streak import Streak
-from utils.getUserName import getUserName
+from utils.get_username import get_username
 from telegram import Update, ParseMode
 import logging
 

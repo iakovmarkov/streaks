@@ -1,33 +1,12 @@
 from commands.Command import Command
-from commands.delete import Delete
 from models.User import User
 from models.Streak import Streak
-from utils.getUserName import getUserName
-from utils.callbacks import CallbackKeys
-from utils.callbacks import CallbackKeys
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from utils.get_username import get_username
+from utils.get_markup import get_markup
+from telegram import Update
 import logging
-import json
 
 log = logging.getLogger(__name__)
-
-
-def get_markup(streak: Streak):
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "Delete",
-                callback_data=json.dumps(
-                    {
-                        CallbackKeys.COMMAND.value: Delete.command,
-                        CallbackKeys.PAYLOAD.value: streak.id,
-                    }
-                ),
-            )
-        ],
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
 
 class List(Command):
     command = "list"
@@ -44,14 +23,14 @@ class List(Command):
 
         if streaks.count() > 0:
             log.info(
-                f"Sending list of {streaks.count()} streaks to {getUserName(update)}"
+                f"Sending list of {streaks.count()} streaks to {get_username(update)}"
             )
             for streak in streaks.all():
                 message = f'Every {streak.when}: "{streak.title}".'
                 update.message.reply_text(
                     text=message,
-                    reply_markup=get_markup(streak),
+                    reply_markup=get_markup(streak=streak, can_delete=True),
                 )
         else:
-            log.info(f"{getUserName(update)} has no remidners yet")
+            log.info(f"{get_username(update)} has no remidners yet")
             update.message.reply_text("You don't have any reminders yet")

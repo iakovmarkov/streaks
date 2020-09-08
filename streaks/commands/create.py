@@ -1,7 +1,7 @@
 from commands.Command import Command
 from models.User import User
 from models.Streak import Streak
-from utils.getUserName import getUserName
+from utils.get_username import get_username
 import logging
 
 log = logging.getLogger(__name__)
@@ -44,6 +44,6 @@ class Create(Command):
         bot.session.commit()
 
         log.info(
-            f"Saved streak ({streak.id}): {when} {text} from {getUserName(update)}"
+            f"Saved streak ({streak.id}): {when} {text} from {get_username(update)}"
         )
         update.message.reply_text(f'Will remind you "{text}" every {when}')

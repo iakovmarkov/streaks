@@ -14,7 +14,17 @@ class Complete(Command):
     def run(bot, update: Update, payload):
         query = update.callback_query
         streak_id = payload
-        streak = bot.session.query(Streak).get(streak_id)
+        uid = query.message.chat.id
+        streak = bot.session.query(Streak).filter(
+            Streak.id == streak_id, Streak.user_id == uid
+        )
+
+        if streak.count() == 0:
+            query.answer(text="Something went wrong.")
+            log.warn(f"Could not complete for {streak_id} for {uid}")
+            return
+
+        streak = streak.first()
 
         if streak.last_track_date and streak.last_track_date > streak.prev_date:
             log.warn(

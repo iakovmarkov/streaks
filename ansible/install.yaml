@@ -31,19 +31,19 @@
     block:
       - name: Copy Bot service
         copy:
-          src: systemd/bot.service
+          src: ../systemd/bot.service
           dest: /etc/systemd/system
           owner: root
           group: root
       - name: Copy Sender service
         copy:
-          src: systemd/sender.service
+          src: ../systemd/sender.service
           dest: /etc/systemd/system
           owner: root
           group: root
       - name: Copy Sender timer
         copy:
-          src: systemd/sender.timer
+          src: ../systemd/sender.timer
           dest: /etc/systemd/system
           owner: root
           group: root

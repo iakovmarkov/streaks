@@ -7,7 +7,7 @@ from telegram import Update
 from sqlalchemy.orm import Session
 from models.User import User
 from models.Streak import Streak
-from utils.getUserName import getUserName
+from utils.get_username import get_username
 from utils.callbacks import CallbackKeys
 from datetime import datetime, timedelta, time, timezone
 import json
@@ -33,7 +33,7 @@ class Bot:
     def __init__(self, args, session: Session):
         log.info("Creating Bot...")
         self.session = session
-        self.updater = Updater(args.botToken, use_context=True)
+        self.updater = Updater(args.bot_token, use_context=True)
 
         dispatcher = self.updater.dispatcher
         dispatcher.add_handler(CommandHandler("start", self.start))
@@ -100,14 +100,16 @@ class Bot:
                 commands.Complete.run(bot=self, update=update, payload=payload)
             elif command == commands.Delete.command:
                 commands.Delete.run(bot=self, update=update, payload=payload)
+            elif command == commands.Info.command:
+                commands.Info.run(bot=self, update=update, payload=payload)
             else:
                 log.warn(
-                    f"Could not find handler for callback: {command} - {payload} from {getUserName(update)}"
+                    f"Could not find handler for callback: {command} - {payload} from {get_username(update)}"
                 )
 
         except Exception as e:
             self.session.rollback()
             log.error(
-                f"Error handling command {command} from {getUserName(update)}: {e}"
+                f"Error handling command {command} from {get_username(update)}: {e}"
             )
             query.answer(text="Something went wrong.")

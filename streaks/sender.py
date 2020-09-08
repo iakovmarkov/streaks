@@ -1,33 +1,19 @@
 from datetime import datetime, timezone, timedelta, time
 from telegram.bot import Bot
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from models.Streak import Streak
 from models.User import User
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from commands.complete import Complete
+from commands.info import Info
+from utils.get_markup import get_markup
 from utils.callbacks import CallbackKeys
+from utils.get_streak_info import get_streak_info
 import logging
 import json
 
 log = logging.getLogger(__name__)
-
-
-def get_markup(streak: Streak):
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "✔️ Complete",
-                callback_data=json.dumps(
-                    {
-                        CallbackKeys.COMMAND.value: Complete.command,
-                        CallbackKeys.PAYLOAD.value: streak.id,
-                    }
-                ),
-            )
-        ],
-    ]
-    return InlineKeyboardMarkup(keyboard)
+nl = "\n"  # Python, why won't you allow this in the f-string?
 
 
 def send_reminders(tz, session: Session, bot: Bot):
@@ -57,7 +43,7 @@ def send_reminders(tz, session: Session, bot: Bot):
             bot.send_message(
                 chat_id=streak.user_id,
                 text=streak.title,
-                reply_markup=get_markup(streak),
+                reply_markup=get_markup(streak=streak, can_complete=True),
             )
         log.info(f"Updated & sent {streaks.count()} streaks.")
     else:
@@ -85,24 +71,20 @@ def send_stats(tz, session: Session, bot: Bot):
 
     for user in users.all():
         streaks = session.query(Streak).filter(Streak.user_id == user.id, Streak.count_streak > 0)
+
         if streaks.count() == 0:
             return
 
-        bot.send_message(chat_id=user.id, text="Good evening!")
+        bot.send_message(chat_id=user.id, text="Good day! Those are your stats so far:")
         for streak in streaks:
-            text = f"Your streak at '{streak.title}' is {streak.count_streak}, with a total of {streak.count_total}. "
-            if streak.count_streak == streak.longest:
-                text += "This is your longest streak."
-            else:
-                text += f"Your longest streak was {streak.longest}."
-            bot.send_message(chat_id=user.id, text=text)
+            bot.send_message(chat_id=user.id, text=f"{nl}{nl}".join(get_streak_info(streak)))
         text = "You're doing a great job!"
         bot.send_message(chat_id=user.id, text=text)
 
 
 def send(args, session: Session):
     log.info("Sending messages...")
-    bot = Bot(args.botToken)
+    bot = Bot(args.bot_token)
     currentHour = datetime.utcnow().hour
 
     morning_tz = 8 - currentHour
@@ -111,10 +93,10 @@ def send(args, session: Session):
 
     evening_tz = 22 - currentHour
     log.info(f"Will send evening summary to users with TZ {evening_tz}")
-    send_stats(evening_tz, session, bot)
+    send_summary(evening_tz, session, bot)
 
     noon_tz = 13 - currentHour
     tz = timezone(timedelta(hours=noon_tz))
     if datetime.now(tz=tz).weekday() == 0:
         log.info(f"Will send last week summary to users with TZ {noon_tz}")
-        send_summary(noon_tz, session, bot)
+        send_stats(noon_tz, session, bot)

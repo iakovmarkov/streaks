@@ -1,7 +1,7 @@
 from commands.Command import Command
 from models.User import User
 from models.Streak import Streak
-from utils.getUserName import getUserName
+from utils.get_username import get_username
 import logging
 
 log = logging.getLogger(__name__)
@@ -32,9 +32,9 @@ class Timezone(Command):
             bot.session.add(user)
             bot.session.commit()
 
-            log.info(f"Set TZ to {tz} for {getUserName(update)}")
+            log.info(f"Set TZ to {tz} for {get_username(update)}")
             update.message.reply_text(f"Set your timezone to {tz}")
         except Exception as e:
             bot.session.rollback()
-            log.error(f"Error setting TZ to '{tz}' for {getUserName(update)}: {e}")
+            log.error(f"Error setting TZ to '{tz}' for {get_username(update)}: {e}")
             update.message.reply_text(f"Sorry, something went wrong.")

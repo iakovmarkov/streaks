@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import User, Streak
 
-logLevels = [
+log_levels = [
     "DEBUG",
     "INFO",
     "WARNING",
@@ -14,7 +14,7 @@ logLevels = [
     "CRITICAL",
 ]
 
-logFormats = {
+log_formats = {
     "LONG": "%(asctime)s - %(message)s",
     "SHORT": "%(message)s",
 }
@@ -36,7 +36,7 @@ def main():
     parser.add(
         "--log_level",
         env_var="LOG_LEVEL",
-        help=f'Log verbosity. Can be {", ".join(logLevels)}',
+        help=f'Log verbosity. Can be {", ".join(log_levels)}',
         default="INFO",
     )
 
@@ -49,7 +49,7 @@ def main():
     parser.add("--bot_token", env_var="BOT_TOKEN", type=str, help="Telegram bot token")
 
     args = parser.parse_args()
-    print(f"Log level is {args.logLevel}")
+    print(f"Log level is {args.log_level}")
 
     if args.command == "bot":
         command = Bot
@@ -61,11 +61,11 @@ def main():
         return
 
     logging.basicConfig(
-        level=args.logLevel,
-        format=logFormats[args.logFormat],
+        level=args.log_level,
+        format=log_formats[args.log_format],
         datefmt="%d-%b-%y %H:%M:%S",
     )
-    logging.root.setLevel(args.logLevel)
+    logging.root.setLevel(args.log_level)
 
     try:
         logging.info(f"Using DB: {args.db}")
