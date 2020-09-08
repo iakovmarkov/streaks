@@ -84,11 +84,11 @@ def send_stats(tz, session: Session, bot: Bot):
     users = session.query(User).filter(User.timezone == tz)
 
     for user in users.all():
-        streaks = session.query(Streak).filter(Streak.user_id == user.id)
+        streaks = session.query(Streak).filter(Streak.user_id == user.id, Streak.count_streak > 0)
         if streaks.count() == 0:
             return
 
-        bot.send_message(chat_id=user.id, text="Good afternoon!")
+        bot.send_message(chat_id=user.id, text="Good evening!")
         for streak in streaks:
             text = f"Your streak at '{streak.title}' is {streak.count_streak}, with a total of {streak.count_total}. "
             if streak.count_streak == streak.longest:
