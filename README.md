@@ -2,7 +2,7 @@
 
 This repository contains code for Streaks - a small Telegram bot that helps humans build habits.
 
-To learn more about Streaks, take a look at the [web page](https://iakovmarkov.github.io/streaks/).
+To learn more about Streaks, take a look at the [web page](https://streaks.iakov.me/).
 
 The official Streaks bot is running under name [str34ks_bot](https://t.me/str34ks_bot), but you can roll your own instance.
 
