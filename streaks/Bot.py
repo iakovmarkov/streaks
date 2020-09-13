@@ -112,4 +112,5 @@ class Bot:
             log.error(
                 f"Error handling command {command} from {get_username(update)}: {e}"
             )
+            print(e)
             query.answer(text="Something went wrong.")
